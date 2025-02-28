@@ -1,42 +1,33 @@
 import { ref, onMounted } from 'vue';
 import { useUserStore } from '../stores/user';
-import { registerUser, updateUser as apiUpdateUser, deleteUser as apiDeleteUser, enableUser as apiEnableUser, disableUser as apiDisableUser } from '../api/users';
+import { updateUser as apiUpdateUser, deleteUser as apiDeleteUser, enableUser as apiEnableUser, disableUser as apiDisableUser } from '../api/users';
 import UserForm from '../components/UserForm.vue';
 const userStore = useUserStore();
 const selectedUser = ref(null);
-const newUser = ref({
-    username: '',
-    fullName: '',
-    gender: '',
-    email: '',
-    password: '',
-});
+const isLoading = ref(false); // Track loading state
+const message = ref(null); // Feedback message
+const messageClass = ref(''); // CSS class for message
 onMounted(() => {
     userStore.fetchUsers();
 });
-async function registerNewUser() {
-    try {
-        await registerUser(newUser.value);
-        userStore.fetchUsers();
-        newUser.value = { username: '', fullName: '', gender: '', email: '', password: '' };
-    }
-    catch (error) {
-        console.error('User registration failed:', error);
-    }
-}
 function editUser(user) {
     selectedUser.value = { ...user };
 }
 async function updateSelectedUser(userData) {
     if (!selectedUser.value?.id)
         return;
+    console.log('Updating user with ID:', selectedUser.value.id);
+    console.log('User data to send:', JSON.stringify(userData, null, 2));
     try {
         await apiUpdateUser(selectedUser.value.id, userData);
+        console.log('Update successful');
         userStore.fetchUsers();
         selectedUser.value = null;
+        showMessage('User updated successfully', 'text-green-600');
     }
     catch (error) {
-        console.error('Update failed:', error);
+        console.error('Update failed in frontend:', error);
+        showMessage('Failed to update user', 'text-red-600');
     }
 }
 function cancelEdit() {
@@ -47,29 +38,51 @@ async function removeUser(id) {
         try {
             await apiDeleteUser(id);
             userStore.fetchUsers();
+            showMessage('User deleted successfully', 'text-green-600');
         }
         catch (error) {
             console.error('Delete failed:', error);
+            showMessage('Failed to delete user', 'text-red-600');
         }
     }
 }
 async function activateUser(id) {
+    isLoading.value = true;
     try {
         await apiEnableUser(id);
         userStore.fetchUsers();
+        showMessage('User enabled successfully', 'text-green-600');
     }
     catch (error) {
         console.error('Enable failed:', error);
+        showMessage('Failed to enable user', 'text-red-600');
+    }
+    finally {
+        isLoading.value = false;
     }
 }
 async function deactivateUser(id) {
+    isLoading.value = true;
     try {
         await apiDisableUser(id);
         userStore.fetchUsers();
+        showMessage('User disabled successfully', 'text-green-600');
     }
     catch (error) {
         console.error('Disable failed:', error);
+        showMessage('Failed to disable user', 'text-red-600');
     }
+    finally {
+        isLoading.value = false;
+    }
+}
+function showMessage(text, cssClass) {
+    message.value = text;
+    messageClass.value = cssClass;
+    setTimeout(() => {
+        message.value = null;
+        messageClass.value = '';
+    }, 3000); // Clear message after 3 seconds
 }
 ; /* PartiallyEnd: #3632/scriptSetup.vue */
 const __VLS_ctx = {};
@@ -90,78 +103,13 @@ __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.d
 __VLS_asFunctionalElement(__VLS_intrinsicElements.h3, __VLS_intrinsicElements.h3)({
     ...{ class: "text-lg font-medium" },
 });
-__VLS_asFunctionalElement(__VLS_intrinsicElements.form, __VLS_intrinsicElements.form)({
-    ...{ onSubmit: (__VLS_ctx.registerNewUser) },
-    ...{ class: "space-y-6 mt-4" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.label, __VLS_intrinsicElements.label)({
-    ...{ class: "block text-sm font-medium text-gray-700" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.input)({
-    value: (__VLS_ctx.newUser.username),
-    type: "text",
-    required: true,
-    ...{ class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.label, __VLS_intrinsicElements.label)({
-    ...{ class: "block text-sm font-medium text-gray-700" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.input)({
-    value: (__VLS_ctx.newUser.fullName),
-    type: "text",
-    required: true,
-    ...{ class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.label, __VLS_intrinsicElements.label)({
-    ...{ class: "block text-sm font-medium text-gray-700" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.select, __VLS_intrinsicElements.select)({
-    value: (__VLS_ctx.newUser.gender),
-    required: true,
-    ...{ class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.option, __VLS_intrinsicElements.option)({
-    value: "male",
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.option, __VLS_intrinsicElements.option)({
-    value: "female",
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.option, __VLS_intrinsicElements.option)({
-    value: "other",
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.label, __VLS_intrinsicElements.label)({
-    ...{ class: "block text-sm font-medium text-gray-700" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.input)({
-    type: "email",
-    required: true,
-    ...{ class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" },
-});
-(__VLS_ctx.newUser.email);
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.label, __VLS_intrinsicElements.label)({
-    ...{ class: "block text-sm font-medium text-gray-700" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.input)({
-    type: "password",
-    required: true,
-    ...{ class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" },
-});
-(__VLS_ctx.newUser.password);
-__VLS_asFunctionalElement(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({
-    type: "submit",
-    ...{ class: "w-full flexed justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "mt-6 bg-white shadow rounded-lg p-6" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.h3, __VLS_intrinsicElements.h3)({
-    ...{ class: "text-lg font-medium" },
-});
+if (__VLS_ctx.message) {
+    __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+        ...{ class: "mt-2 text-sm" },
+        ...{ class: (__VLS_ctx.messageClass) },
+    });
+    (__VLS_ctx.message);
+}
 __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
     ...{ class: "mt-4 overflow-x-auto" },
 });
@@ -172,6 +120,9 @@ __VLS_asFunctionalElement(__VLS_intrinsicElements.thead, __VLS_intrinsicElements
     ...{ class: "bg-gray-50" },
 });
 __VLS_asFunctionalElement(__VLS_intrinsicElements.tr, __VLS_intrinsicElements.tr)({});
+__VLS_asFunctionalElement(__VLS_intrinsicElements.th, __VLS_intrinsicElements.th)({
+    ...{ class: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" },
+});
 __VLS_asFunctionalElement(__VLS_intrinsicElements.th, __VLS_intrinsicElements.th)({
     ...{ class: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" },
 });
@@ -204,6 +155,17 @@ for (const [user] of __VLS_getVForSourceType((__VLS_ctx.userStore.users))) {
     });
     (user.email || 'N/A');
     __VLS_asFunctionalElement(__VLS_intrinsicElements.td, __VLS_intrinsicElements.td)({
+        ...{ class: "px-6 py-4 whitespace-nowrap" },
+    });
+    __VLS_asFunctionalElement(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({
+        ...{ class: ([
+                user.roles?.includes('DISABLED')
+                    ? 'text-red-600'
+                    : 'text-green-600',
+            ]) },
+    });
+    (user.roles?.includes('DISABLED') ? 'Disabled' : 'Enabled');
+    __VLS_asFunctionalElement(__VLS_intrinsicElements.td, __VLS_intrinsicElements.td)({
         ...{ class: "px-6 py-4 whitespace-nowrap space-x-2" },
     });
     __VLS_asFunctionalElement(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({
@@ -225,7 +187,8 @@ for (const [user] of __VLS_getVForSourceType((__VLS_ctx.userStore.users))) {
                         return;
                     __VLS_ctx.activateUser(user.id);
                 } },
-            ...{ class: "text-green-600 hover:text-green-900" },
+            ...{ class: "text-green-600 hover:text-green-900 disabled:opacity-50" },
+            disabled: (__VLS_ctx.isLoading),
         });
     }
     else {
@@ -235,7 +198,8 @@ for (const [user] of __VLS_getVForSourceType((__VLS_ctx.userStore.users))) {
                         return;
                     __VLS_ctx.deactivateUser(user.id);
                 } },
-            ...{ class: "text-yellow-600 hover:text-yellow-900" },
+            ...{ class: "text-yellow-600 hover:text-yellow-900 disabled:opacity-50" },
+            disabled: (__VLS_ctx.isLoading),
         });
     }
 }
@@ -284,98 +248,8 @@ if (__VLS_ctx.selectedUser) {
 /** @type {__VLS_StyleScopedClasses['p-6']} */ ;
 /** @type {__VLS_StyleScopedClasses['text-lg']} */ ;
 /** @type {__VLS_StyleScopedClasses['font-medium']} */ ;
-/** @type {__VLS_StyleScopedClasses['space-y-6']} */ ;
-/** @type {__VLS_StyleScopedClasses['mt-4']} */ ;
-/** @type {__VLS_StyleScopedClasses['block']} */ ;
+/** @type {__VLS_StyleScopedClasses['mt-2']} */ ;
 /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['font-medium']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-gray-700']} */ ;
-/** @type {__VLS_StyleScopedClasses['mt-1']} */ ;
-/** @type {__VLS_StyleScopedClasses['block']} */ ;
-/** @type {__VLS_StyleScopedClasses['w-full']} */ ;
-/** @type {__VLS_StyleScopedClasses['rounded-md']} */ ;
-/** @type {__VLS_StyleScopedClasses['border-gray-300']} */ ;
-/** @type {__VLS_StyleScopedClasses['shadow-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:border-indigo-500']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:ring-indigo-500']} */ ;
-/** @type {__VLS_StyleScopedClasses['sm:text-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['block']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['font-medium']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-gray-700']} */ ;
-/** @type {__VLS_StyleScopedClasses['mt-1']} */ ;
-/** @type {__VLS_StyleScopedClasses['block']} */ ;
-/** @type {__VLS_StyleScopedClasses['w-full']} */ ;
-/** @type {__VLS_StyleScopedClasses['rounded-md']} */ ;
-/** @type {__VLS_StyleScopedClasses['border-gray-300']} */ ;
-/** @type {__VLS_StyleScopedClasses['shadow-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:border-indigo-500']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:ring-indigo-500']} */ ;
-/** @type {__VLS_StyleScopedClasses['sm:text-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['block']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['font-medium']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-gray-700']} */ ;
-/** @type {__VLS_StyleScopedClasses['mt-1']} */ ;
-/** @type {__VLS_StyleScopedClasses['block']} */ ;
-/** @type {__VLS_StyleScopedClasses['w-full']} */ ;
-/** @type {__VLS_StyleScopedClasses['rounded-md']} */ ;
-/** @type {__VLS_StyleScopedClasses['border-gray-300']} */ ;
-/** @type {__VLS_StyleScopedClasses['shadow-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:border-indigo-500']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:ring-indigo-500']} */ ;
-/** @type {__VLS_StyleScopedClasses['sm:text-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['block']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['font-medium']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-gray-700']} */ ;
-/** @type {__VLS_StyleScopedClasses['mt-1']} */ ;
-/** @type {__VLS_StyleScopedClasses['block']} */ ;
-/** @type {__VLS_StyleScopedClasses['w-full']} */ ;
-/** @type {__VLS_StyleScopedClasses['rounded-md']} */ ;
-/** @type {__VLS_StyleScopedClasses['border-gray-300']} */ ;
-/** @type {__VLS_StyleScopedClasses['shadow-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:border-indigo-500']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:ring-indigo-500']} */ ;
-/** @type {__VLS_StyleScopedClasses['sm:text-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['block']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['font-medium']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-gray-700']} */ ;
-/** @type {__VLS_StyleScopedClasses['mt-1']} */ ;
-/** @type {__VLS_StyleScopedClasses['block']} */ ;
-/** @type {__VLS_StyleScopedClasses['w-full']} */ ;
-/** @type {__VLS_StyleScopedClasses['rounded-md']} */ ;
-/** @type {__VLS_StyleScopedClasses['border-gray-300']} */ ;
-/** @type {__VLS_StyleScopedClasses['shadow-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:border-indigo-500']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:ring-indigo-500']} */ ;
-/** @type {__VLS_StyleScopedClasses['sm:text-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['w-full']} */ ;
-/** @type {__VLS_StyleScopedClasses['flexed']} */ ;
-/** @type {__VLS_StyleScopedClasses['justify-center']} */ ;
-/** @type {__VLS_StyleScopedClasses['py-2']} */ ;
-/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
-/** @type {__VLS_StyleScopedClasses['border']} */ ;
-/** @type {__VLS_StyleScopedClasses['border-transparent']} */ ;
-/** @type {__VLS_StyleScopedClasses['rounded-md']} */ ;
-/** @type {__VLS_StyleScopedClasses['shadow-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['font-medium']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-white']} */ ;
-/** @type {__VLS_StyleScopedClasses['bg-indigo-600']} */ ;
-/** @type {__VLS_StyleScopedClasses['hover:bg-indigo-700']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:outline-none']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:ring-2']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:ring-offset-2']} */ ;
-/** @type {__VLS_StyleScopedClasses['focus:ring-indigo-500']} */ ;
-/** @type {__VLS_StyleScopedClasses['mt-6']} */ ;
-/** @type {__VLS_StyleScopedClasses['bg-white']} */ ;
-/** @type {__VLS_StyleScopedClasses['shadow']} */ ;
-/** @type {__VLS_StyleScopedClasses['rounded-lg']} */ ;
-/** @type {__VLS_StyleScopedClasses['p-6']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-lg']} */ ;
-/** @type {__VLS_StyleScopedClasses['font-medium']} */ ;
 /** @type {__VLS_StyleScopedClasses['mt-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['overflow-x-auto']} */ ;
 /** @type {__VLS_StyleScopedClasses['min-w-full']} */ ;
@@ -414,9 +288,20 @@ if (__VLS_ctx.selectedUser) {
 /** @type {__VLS_StyleScopedClasses['text-gray-500']} */ ;
 /** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
 /** @type {__VLS_StyleScopedClasses['tracking-wider']} */ ;
+/** @type {__VLS_StyleScopedClasses['px-6']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-left']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-medium']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-gray-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wider']} */ ;
 /** @type {__VLS_StyleScopedClasses['bg-white']} */ ;
 /** @type {__VLS_StyleScopedClasses['divide-y']} */ ;
 /** @type {__VLS_StyleScopedClasses['divide-gray-200']} */ ;
+/** @type {__VLS_StyleScopedClasses['px-6']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['whitespace-nowrap']} */ ;
 /** @type {__VLS_StyleScopedClasses['px-6']} */ ;
 /** @type {__VLS_StyleScopedClasses['py-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['whitespace-nowrap']} */ ;
@@ -436,8 +321,10 @@ if (__VLS_ctx.selectedUser) {
 /** @type {__VLS_StyleScopedClasses['hover:text-red-900']} */ ;
 /** @type {__VLS_StyleScopedClasses['text-green-600']} */ ;
 /** @type {__VLS_StyleScopedClasses['hover:text-green-900']} */ ;
+/** @type {__VLS_StyleScopedClasses['disabled:opacity-50']} */ ;
 /** @type {__VLS_StyleScopedClasses['text-yellow-600']} */ ;
 /** @type {__VLS_StyleScopedClasses['hover:text-yellow-900']} */ ;
+/** @type {__VLS_StyleScopedClasses['disabled:opacity-50']} */ ;
 /** @type {__VLS_StyleScopedClasses['mt-6']} */ ;
 /** @type {__VLS_StyleScopedClasses['bg-white']} */ ;
 /** @type {__VLS_StyleScopedClasses['shadow']} */ ;
@@ -452,8 +339,9 @@ const __VLS_self = (await import('vue')).defineComponent({
             UserForm: UserForm,
             userStore: userStore,
             selectedUser: selectedUser,
-            newUser: newUser,
-            registerNewUser: registerNewUser,
+            isLoading: isLoading,
+            message: message,
+            messageClass: messageClass,
             editUser: editUser,
             updateSelectedUser: updateSelectedUser,
             cancelEdit: cancelEdit,

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import type { UserRequest, UserResponse, UserUpdateRequest } from '../interfaces/user';
 
 const api = axios.create({
@@ -17,7 +17,11 @@ export const updateUser = async (id: string, user: Partial<UserUpdateRequest>): 
         console.log('Response:', response.data);
         return response.data.payload;
     } catch (error) {
-        console.error('Update API Error:', error.response?.data || error.message);
+        if (axios.isAxiosError(error)) {
+            console.error('Update API Error:', error.response?.data || error.message);
+        } else {
+            console.error('An unexpected error occurred:', error);
+        }
         throw error; // Re-throw to handle in the caller
     }
 };
